@@ -135,7 +135,7 @@ def main():
 
     check_optin_and_kick(transactions, header, asas)
 
-    txgrps = create_groups(transactions,3)
+    txgrps = create_groups(transactions,private.GROUPSIZE)
 
     print('Writing transactions to "pending_transactions.csv" to file. Missing opt-ins can be found in "missing_optin.csv".')
     groups_to_csv('pending_transactions.csv',txgrps)
