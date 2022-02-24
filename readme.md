@@ -7,6 +7,8 @@
     - It uses decimal dot in amount, and algo has ASA ID 0.
 4. Optional: If you intend for the script to sign and send transactions you need to add your mnemonic to private.py
     - You will be prompted for confirmation twice, with time in between to review output .csv files with what the script intends to do.
+    - It is only on row 3 that you input your mnemonic, nothing else needs changing!
+        - Input as MNEMONIC = "word1 word2 word3 ... word24 word25"
 4. Open CMD and navigate to the repo folder.
 5. Install the only prerequisite py-algo-sdk by running the command `pip install py-algorand-sdk` (or `pip3 install py-algorand-sdk`) 
     - Should work to do `py -m pip install py-algorand-sdk` or `python3 -m pip install py-algorand-sdk` or the same with pip3 instead of pip. Depends on a lot of stuff but give all a try before you deem it impossible!
