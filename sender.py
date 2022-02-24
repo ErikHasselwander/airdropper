@@ -8,10 +8,10 @@ import private
 
 algod_address = 'https://mainnet-api.algonode.cloud'
 indexer_adress = 'https://mainnet-idx.algonode.cloud'
-algoexplorer_token = ''
+alognode_token = ''
 
-algo_client = algod.AlgodClient(algoexplorer_token, algod_address, headers={'User-Agent': 'algosdk'})
-algo_indexer = indexer.IndexerClient(algoexplorer_token, indexer_adress, headers={'User-Agent': 'algosdk'})
+algo_client = algod.AlgodClient(alognode_token, algod_address, headers={'User-Agent': 'algosdk'})
+algo_indexer = indexer.IndexerClient(alognode_token, indexer_adress, headers={'User-Agent': 'algosdk'})
 
 from_address = private.account['address']
 from_privatekey = private.account['private_key']
@@ -26,11 +26,17 @@ class parsed_tx():
         self.group = ""
         self.optin = False
     def optin_check(self, accounts):
-        for account in accounts:
-            if self.receiver in account['address']:
-                self.optin = True
-                return self.optin
-        self.optin = False
+        if self.receiver in accounts:
+            self.optin = True
+            return self.optin
+        account_info = algo_client.account_info(self.receiver)
+        try:
+            for x in account_info['assets']:
+                if x['asset-id'] == self.asaid:
+                    self.optin = True
+                    return self.optin
+        except:
+            pass
         return self.optin
 
 class tx_grp():
@@ -111,16 +117,25 @@ def groups_to_csv(path,txgrps):
                     file.write(f'{tx["sender"]},0,{tx["amt"]},{tx["receiver"]}\n')
 
 
-def check_optin_and_kick(transactions, header, asas):                
+def check_optin_and_kick(transactions, header, asas):
     for asa in asas:
         if asa:
-            asas[asa]['accounts'] = algo_indexer.accounts(asset_id=asa, limit=1000000)['accounts']
+            asas[asa] = []
+            accounts_with_app = algo_indexer.accounts(asset_id=asa, limit=1000)#['accounts']
+            for account in accounts_with_app['accounts']:
+                asas[asa].append(account['address'])
+            
+            while 'next-token' in accounts_with_app:
+                accounts_with_app = algo_indexer.accounts(application_id=465818260, limit=1000, next_page=accounts_with_app['next-token'])
+                for account in accounts_with_app['accounts']:
+                    asas[asa].append(account['address'])
+
     flag = False
     for tx in transactions:
         if tx.asaid == 0:
             opted_in = True
         else:
-            opted_in = tx.optin_check(asas[tx.asaid]['accounts'])
+            opted_in = tx.optin_check(asas[tx.asaid])
         
         if not opted_in:
             if not flag:
