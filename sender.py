@@ -38,6 +38,7 @@ class tx_grp():
         self.original_transactions = []
         self.transactions = []
         self.gid = None
+        self.stx = []
     def add_og_tx(self,tx):
         self.original_transactions.append(tx)
     def add_transaction(self,tx):
@@ -48,7 +49,7 @@ class tx_grp():
             tx.group = gid
     def sign_grp(self,key):
         for tx in self.transactions:
-            tx.sign(key)
+            self.stx.append(tx.sign(key))
 
 
 def csv_reader(path):
@@ -90,6 +91,8 @@ def create_groups(transactions, txpergrp):
                 txgrp.add_transaction(transaction.AssetTransferTxn(ctx.sender,params,ctx.receiver,ctx.amount,ctx.asaid))
                 txgrp.add_og_tx(ctx)
         gid = transaction.calculate_group_id(txgrp.transactions)
+        for tx in txgrp.transactions:
+            tx.group = gid
         txgrp.add_gid(gid)
         txgrps.append(txgrp)
     return txgrps
@@ -153,24 +156,27 @@ def main():
         return
     for txgrp in txgrps:
         try:
-            txid = algo_client.send_transactions(txgrp.transactions)
+            txid = algo_client.send_transactions(txgrp.stx)
             txgrp.txid = txid
         except:
             txgrp.txid = "FAILED"
-        
+
     print('All transactions signed and sent. Waiting 15 seconds and then checking status. All results will be printed to "final_output.csv"')
-    sleep(1)
+    sleep(15)
     with open('final_output.csv', 'w') as file:
         file.write('Group ID,status\n')
         
     failed_groups = []
     for txgrp in txgrps:
-        print(txgrp.txid)
         try:
             tx_search = algo_indexer.search_transactions(txid=txgrp.txid)
             if txgrp.txid in tx_search['transactions'][0]['id']:
                 with open('final_output.csv', 'a') as file:
                     file.write(f'{txgrp.gid},Success\n')
+            else:
+                with open('final_output.csv', 'a') as file:
+                    file.write(f'{txgrp.gid},Failed\n')
+                    failed_groups.append(txgrp.gid)
         except:
             with open('final_output.csv', 'a') as file:
                 file.write(f'{txgrp.gid},Failed\n')
