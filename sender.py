@@ -1,9 +1,10 @@
 from algosdk.v2client import algod
 from algosdk.v2client import indexer
 from algosdk.future import transaction
-from time import sleep
+from time import sleep, time
 import math
 import private
+import random
 
 
 algod_address = 'https://mainnet-api.algonode.cloud'
@@ -15,7 +16,6 @@ algo_indexer = indexer.IndexerClient(alognode_token, indexer_adress, headers={'U
 
 from_address = private.account['address']
 from_privatekey = private.account['private_key']
-
 
 class parsed_tx():
     def __init__(self,sender,receiver,asaid,amount):
@@ -91,10 +91,10 @@ def create_groups(transactions, txpergrp):
         for _ in range(amount):
             ctx: parsed_tx = transactions.pop(0)
             if ctx.asaid == 0:
-                txgrp.add_transaction(transaction.PaymentTxn(ctx.sender,params,ctx.receiver,ctx.amount))
+                txgrp.add_transaction(transaction.PaymentTxn(ctx.sender,params,ctx.receiver,ctx.amount, note=str(time() + random.random())))
                 txgrp.add_og_tx(ctx)
             else:
-                txgrp.add_transaction(transaction.AssetTransferTxn(ctx.sender,params,ctx.receiver,ctx.amount,ctx.asaid))
+                txgrp.add_transaction(transaction.AssetTransferTxn(ctx.sender,params,ctx.receiver,ctx.amount,ctx.asaid,note=str(time() + random.random())))
                 txgrp.add_og_tx(ctx)
         gid = transaction.calculate_group_id(txgrp.transactions)
         for tx in txgrp.transactions:
@@ -121,7 +121,7 @@ def check_optin_and_kick(transactions, header, asas):
     for asa in asas:
         if asa:
             asas[asa] = []
-            accounts_with_app = algo_indexer.accounts(asset_id=asa, limit=1000)#['accounts']
+            accounts_with_app = algo_indexer.accounts(asset_id=asa, limit=1000)
             for account in accounts_with_app['accounts']:
                 asas[asa].append(account['address'])
             
@@ -173,6 +173,7 @@ def main():
         try:
             txid = algo_client.send_transactions(txgrp.stx)
             txgrp.txid = txid
+            sleep(0.1)
         except:
             txgrp.txid = "FAILED"
 
@@ -196,6 +197,7 @@ def main():
             with open('final_output.csv', 'a') as file:
                 file.write(f'{txgrp.gid},Failed\n')
                 failed_groups.append(txgrp.gid)
+        sleep(0.1)
 
 if __name__ == '__main__':
     main()
