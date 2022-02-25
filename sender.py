@@ -1,3 +1,4 @@
+from cmath import exp
 from algosdk.v2client import algod
 from algosdk.v2client import indexer
 from algosdk.future import transaction
@@ -110,10 +111,10 @@ def groups_to_csv(path,txgrps):
             file.write(f'{txgrp.gid}\n')
             for tx in txgrp.transactions:
                 tx = tx.__dict__
-                try:
+                if 'index' in tx:
                     tx["index"]
                     file.write(f'{tx["sender"]},{tx["index"]},{tx["amount"]},{tx["receiver"]}\n')
-                except:
+                else:
                     file.write(f'{tx["sender"]},0,{tx["amt"]},{tx["receiver"]}\n')
 
 
@@ -174,8 +175,8 @@ def main():
             txid = algo_client.send_transactions(txgrp.stx)
             txgrp.txid = txid
             sleep(0.1)
-        except:
-            txgrp.txid = "FAILED"
+        except Exception as err:
+            txgrp.txid = f"FAILED with error {err}"
 
     print('All transactions signed and sent. Waiting 15 seconds and then checking status. All results will be printed to "final_output.csv"')
     sleep(15)
@@ -193,9 +194,9 @@ def main():
                 with open('final_output.csv', 'a') as file:
                     file.write(f'{txgrp.gid},Failed\n')
                     failed_groups.append(txgrp.gid)
-        except:
+        except Exception as err:
             with open('final_output.csv', 'a') as file:
-                file.write(f'{txgrp.gid},Failed\n')
+                file.write(f'{txgrp.gid},Failed with error {err}\n')
                 failed_groups.append(txgrp.gid)
         sleep(0.1)
 
