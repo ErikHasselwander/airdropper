@@ -31,6 +31,7 @@ class parsed_tx():
             self.optin = True
             return self.optin
         account_info = algo_client.account_info(self.receiver)
+        sleep(0.02) # To not get ratelimited by algonode.
         try:
             for x in account_info['assets']:
                 if x['asset-id'] == self.asaid:
@@ -127,32 +128,29 @@ def check_optin_and_kick(transactions, header, asas):
                 asas[asa].append(account['address'])
             
             while 'next-token' in accounts_with_app:
-                accounts_with_app = algo_indexer.accounts(application_id=465818260, limit=1000, next_page=accounts_with_app['next-token'])
+                accounts_with_app = algo_indexer.accounts(asset_id=asa, limit=1000, next_page=accounts_with_app['next-token'])
                 for account in accounts_with_app['accounts']:
                     asas[asa].append(account['address'])
 
-    flag = False
-    for tx in transactions:
-        if tx.asaid == 0:
-            opted_in = True
-        else:
-            opted_in = tx.optin_check(asas[tx.asaid])
-        
-        if not opted_in:
-            if not flag:
-                with open('missing_optin.csv', 'w') as file:
+
+    validtxs = [tx for tx in transactions if not tx.asaid or tx.optin_check(asas[tx.asaid])]
+    invalidtxs = [tx for tx in transactions if tx.asaid and not tx.optin_check(asas[tx.asaid])]
+    if invalidtxs:
+        with open('missing_optin.csv', 'w') as file:
                     file.write(str(header) + '\n')
-                    flag = True
+
+        for tx in invalidtxs:
             with open('missing_optin.csv', 'a') as file:
-                file.write(f'{tx.sender},{tx.asaid},{tx.amount},{tx.receiver}')
-            transactions.remove(tx)
+                file.write(f'{tx.sender},{tx.asaid},{tx.amount},{tx.receiver}\n')
+
+    return validtxs
 
 
 def main():
     filepath = input('Input the filename of the .csv to read: ')
     transactions, header, asas = csv_reader(filepath)
 
-    check_optin_and_kick(transactions, header, asas)
+    transactions = check_optin_and_kick(transactions, header, asas)
 
     txgrps = create_groups(transactions,private.GROUPSIZE)
 
