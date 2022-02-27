@@ -1,9 +1,7 @@
-from cmath import exp
 from algosdk.v2client import algod
 from algosdk.v2client import indexer
 from algosdk.future import transaction
 from time import sleep, time
-import math
 import private
 import random
 
