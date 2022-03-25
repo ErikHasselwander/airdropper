@@ -173,6 +173,7 @@ def main():
         return
     for txgrp in txgrps:
         try:
+            print(txgrp.stx)
             txid = algo_client.send_transactions(txgrp.stx)
             txgrp.txid = txid
             sleep(0.1)
