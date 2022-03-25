@@ -131,7 +131,6 @@ def check_optin_and_kick(transactions, header, asas):
                     sleep(0.005)
                     for account in accounts_with_app['accounts']:
                         asas[asa].append(account['address'])
-                        print(len(asas[asa]))
         except:
             pass
 
