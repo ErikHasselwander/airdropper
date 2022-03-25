@@ -6,8 +6,8 @@ import private
 import random
 
 
-algod_address = 'https://mainnet-api.algonode.cloud'
-indexer_adress = 'https://mainnet-idx.algonode.cloud'
+algod_address = 'http://mainnet-api.algonode.cloud'
+indexer_adress = 'http://mainnet-idx.algonode.cloud'
 alognode_token = ''
 
 algo_client = algod.AlgodClient(alognode_token, algod_address, headers={'User-Agent': 'algosdk'})
@@ -119,16 +119,22 @@ def groups_to_csv(path,txgrps):
 
 def check_optin_and_kick(transactions, header, asas):
     for asa in asas:
-        if asa:
-            asas[asa] = []
-            accounts_with_app = algo_indexer.accounts(asset_id=asa, limit=1000)
-            for account in accounts_with_app['accounts']:
-                asas[asa].append(account['address'])
-            
-            while 'next-token' in accounts_with_app:
-                accounts_with_app = algo_indexer.accounts(asset_id=asa, limit=1000, next_page=accounts_with_app['next-token'])
+        try:
+            if asa:
+                asas[asa] = []
+                accounts_with_app = algo_indexer.accounts(asset_id=asa, limit=250)
                 for account in accounts_with_app['accounts']:
                     asas[asa].append(account['address'])
+                
+                while 'next-token' in accounts_with_app:
+                    accounts_with_app = algo_indexer.accounts(asset_id=asa, limit=1, next_page=accounts_with_app['next-token'])
+                    sleep(0.005)
+                    for account in accounts_with_app['accounts']:
+                        asas[asa].append(account['address'])
+                        print(len(asas[asa]))
+        except:
+            pass
+
 
 
     validtxs = [tx for tx in transactions if not tx.asaid or tx.optin_check(asas[tx.asaid])]
