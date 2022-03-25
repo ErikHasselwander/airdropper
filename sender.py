@@ -86,15 +86,15 @@ def create_groups(transactions, txpergrp):
     while len(transactions):
         amount = min(txpergrp, len(transactions))
         params = algo_client.suggested_params()
-        
+            
         txgrp = tx_grp()
         for _ in range(amount):
             ctx: parsed_tx = transactions.pop(0)
             if ctx.asaid == 0:
-                txgrp.add_transaction(transaction.PaymentTxn(ctx.sender,params,ctx.receiver,ctx.amount, note=str(time() + random.random())))
+                txgrp.add_transaction(transaction.PaymentTxn(ctx.sender,params,ctx.receiver,ctx.amount))
                 txgrp.add_og_tx(ctx)
             else:
-                txgrp.add_transaction(transaction.AssetTransferTxn(ctx.sender,params,ctx.receiver,ctx.amount,ctx.asaid,note=str(time() + random.random())))
+                txgrp.add_transaction(transaction.AssetTransferTxn(ctx.sender,params,ctx.receiver,ctx.amount,ctx.asaid))
                 txgrp.add_og_tx(ctx)
         gid = transaction.calculate_group_id(txgrp.transactions)
         for tx in txgrp.transactions:
