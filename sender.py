@@ -91,10 +91,10 @@ def create_groups(transactions, txpergrp):
         for _ in range(amount):
             ctx: parsed_tx = transactions.pop(0)
             if ctx.asaid == 0:
-                txgrp.add_transaction(transaction.PaymentTxn(ctx.sender,params,ctx.receiver,ctx.amount))
+                txgrp.add_transaction(transaction.PaymentTxn(ctx.sender,params,ctx.receiver,ctx.amount, note=str(time()+random.random())))
                 txgrp.add_og_tx(ctx)
             else:
-                txgrp.add_transaction(transaction.AssetTransferTxn(ctx.sender,params,ctx.receiver,ctx.amount,ctx.asaid))
+                txgrp.add_transaction(transaction.AssetTransferTxn(ctx.sender,params,ctx.receiver,ctx.amount,ctx.asaid, note=str(time()+random.random())))
                 txgrp.add_og_tx(ctx)
         gid = transaction.calculate_group_id(txgrp.transactions)
         for tx in txgrp.transactions:
@@ -107,7 +107,7 @@ def create_groups(transactions, txpergrp):
 def groups_to_csv(path,txgrps):
     with open(path, 'w') as file:
         for txgrp in txgrps:
-            file.write(f'{txgrp.gid}\n')
+            file.write(f'{txgrp}\n')
             for tx in txgrp.transactions:
                 tx = tx.__dict__
                 if 'index' in tx:
@@ -119,20 +119,18 @@ def groups_to_csv(path,txgrps):
 
 def check_optin_and_kick(transactions, header, asas):
     for asa in asas:
-        try:
-            if asa:
-                asas[asa] = []
-                accounts_with_app = algo_indexer.accounts(asset_id=asa, limit=250)
+        if asa:
+            asas[asa] = []
+            accounts_with_app = algo_indexer.accounts(asset_id=asa, limit=1000)
+            for account in accounts_with_app['accounts']:
+                asas[asa].append(account['address'])
+            
+            while 'next-token' in accounts_with_app:
+                accounts_with_app = algo_indexer.accounts(asset_id=asa, limit=1000, next_page=accounts_with_app['next-token'])
+                sleep(0.005)
                 for account in accounts_with_app['accounts']:
                     asas[asa].append(account['address'])
-                
-                while 'next-token' in accounts_with_app:
-                    accounts_with_app = algo_indexer.accounts(asset_id=asa, limit=1, next_page=accounts_with_app['next-token'])
-                    sleep(0.005)
-                    for account in accounts_with_app['accounts']:
-                        asas[asa].append(account['address'])
-        except:
-            pass
+
 
 
 
@@ -153,10 +151,10 @@ def main():
     filepath = input('Input the filename of the .csv to read: ')
     transactions, header, asas = csv_reader(filepath)
 
-    transactions = check_optin_and_kick(transactions, header, asas)
+    valid_txs = check_optin_and_kick(transactions, header, asas)
 
-    txgrps = create_groups(transactions,private.GROUPSIZE)
-
+    txgrps = create_groups(valid_txs, private.GROUPSIZE)
+    print(txgrps)
     print('Writing transactions to "pending_transactions.csv" to file. Missing opt-ins can be found in "missing_optin.csv".')
     groups_to_csv('pending_transactions.csv',txgrps)
 
@@ -173,8 +171,7 @@ def main():
         return
     for txgrp in txgrps:
         try:
-            print(txgrp.stx)
-            txid = algo_client.send_transactions(txgrp.stx)
+            txid = algo_client.send_transactions(txgrp)
             txgrp.txid = txid
             sleep(0.1)
         except Exception as err:
