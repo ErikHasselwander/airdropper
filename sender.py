@@ -64,9 +64,12 @@ def sender(path):
         txgrps.append(txgrp)
     
     for txgrp in txgrps:
-        txgrp = sign_txn_grp(txgrp, from_privatekey)
-        algo_client.send_transactions(txgrp)
-        sleep(0.005)
+        try:
+            txgrp = sign_txn_grp(txgrp, from_privatekey)
+            algo_client.send_transactions(txgrp)
+            sleep(0.005)
+        except:
+            print('a group failed')
 
 if __name__ == '__main__':
     sender('test.csv', )
