@@ -45,6 +45,8 @@ def sender(path):
     for tx in transactions:
         if tx[0] in accounts_opted_in:
             valid_accs.append(tx)
+        else:
+            print(tx)
     txgrps = []
     sp = algo_client.suggested_params()
 
