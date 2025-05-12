@@ -17,5 +17,3 @@
 
 # How do I interpret the output .csv files?
 It is quite simple. missing_optin.csv will show all the transactions that were ignored due to missing optins. pending_transactions.csv show what transactions the bot instends to send, and also a header-row which contains what group they are inside of. Once the script is run final_output.csv will show what groups failed and what groups succeeded, and you then corroborate this against the pending_transactions.csv to see which tx's need to be manually sent.
-
-This is so far untested for actually sending transactions. Please reach out to me on discord, Swaggelwander#7655, if there are any issues. Always test scripts before running them hot. Also big thanks to the WAGEROO team who incentivized this project with their first tech bounty!
